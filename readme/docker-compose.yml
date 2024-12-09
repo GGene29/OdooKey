@@ -1,0 +1,51 @@
+version: '3.2'
+
+networks:
+  default:
+    external: 
+      name: odookeycloak
+    # driver: bridge
+    # ipam:
+    #   config:
+    #     - subnet: 172.28.1.0/24
+
+services:
+  web:
+    image: odoo:17.0
+    container_name: keycloak
+
+    restart: always
+  
+    ports:
+      - "8094:8069"
+    networks:
+      default:  
+        ipv4_address: 192.168.0.3
+    environment:
+    - HOST=db_keycloak
+    volumes:
+      - ./filestore_keycloak:/var/lib/odoo/filestore
+      - ./odooconf_keycloak:/etc/odoo
+      - ./keycloak:/mnt/extra-addons
+
+
+  db_keycloak:
+
+    image: postgres:14.0
+    container_name: db_keycloak
+
+    restart: always
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_USER=odoo
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "5445:5432"
+    networks:
+      default:  
+        ipv4_address: 192.168.0.2
+    volumes:
+      - ./dbodoo_keycloak:/var/lib/postgresql/data/pgdata
+
+    

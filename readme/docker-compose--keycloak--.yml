@@ -1,0 +1,44 @@
+version: '3.2'
+
+networks:
+  default:
+    external:
+      name: odookeycloak
+
+services:
+  keycloak_db:
+    image: postgres:15
+    # contaniner_name: keycloakBase
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    networks:
+      default:
+        ipv4_address: 192.168.0.4
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./keycloakBase_db:/var/lib/postgresql/data
+
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.5
+    # container_name: keycloakBase
+    ports:
+      - "8081:8080"
+    environment:
+      - KC_DB=postgres
+      - KC_DB_URL= jdbc:postgresql://keycloak_db:5432/keycloak
+      - KC_DB_USERNAME= keycloak
+      - KC_DB_PASSWORD= password
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    command: ["start-dev"]
+    networks:
+      default:
+        ipv4_address: 192.168.0.5
+
+    depends_on:
+      - keycloak_db
