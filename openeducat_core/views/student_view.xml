@@ -24,7 +24,7 @@
                                     </div>
                                     <div class="oe_kanban_details">
                                         <h4>
-                                            <field name="name" />
+                                            <field name="first_name" />
                                         </h4>
                                         <ul>
                                             <li t-if="record.contact_address.raw_value">
@@ -61,7 +61,7 @@
             <field name="arch" type="xml">
                 <tree string="Student">
                     <field name="title" optional="show"/>
-                    <field name="name"/>
+                    <field name="first_name"/>
                     <field name="gender" optional="hide"/>
                     <field name="birth_date" optional="hide"/>
                     <field name="gr_no" optional="hide"/>

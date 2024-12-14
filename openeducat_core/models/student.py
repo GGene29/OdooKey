@@ -21,7 +21,13 @@
 
 from odoo import models, fields, api,_,tools
 from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError
+from lxml import etree
 
+from pymongo import MongoClient
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class OpStudentCourse(models.Model):
     _name = "op.student.course"
@@ -127,6 +133,7 @@ class OpStudent(models.Model):
     def _validate_email(self):
         if self.email and not tools.single_email_re.match(self.email):
             raise ValidationError(_('Invalid Email! Please enter a valid email address.'))
+        
 
     @api.onchange("mobile")
     def _validate_mobile(self):
@@ -154,3 +161,85 @@ class OpStudent(models.Model):
                     'tz': self._context.get('tz'),
                 })
                 record.user_id = user_id
+    
+
+    @api.model
+    def read(self, fields=None, load='_classic_read'):
+
+        mongo_db = 'mongo_keycloak'
+        mongo_collection = 'students'
+
+        # Luego, busca los mismos registros en MongoDB
+        try:
+            client = MongoClient('mongodb://root:root@192.168.100.6:27017/')
+        except Exception as e:
+            _logger.info('**************************')
+            _logger.warning(e)
+
+        # Autenticación
+        db = client[mongo_db]
+
+        # Consulta a la colección
+        collection = db[mongo_collection]
+        mongo_records = collection.find()
+        all_records = list(mongo_records) 
+
+        _logger.info('---------------------------------')
+        _logger.info(all_records)
+
+
+        records = super(OpStudent, self).read(fields=fields, load=load)
+
+        return records
+    
+
+    # @api.model
+    # def write(self, vals):
+    #     # Lógica personalizada antes de llamar al método original
+    #     print("#################################################################")
+
+
+    #     # Llamar al método original
+    #     result = super(OpStudent, self).write(vals)
+
+    #     # Aquí puedes agregar lógica para actualizar la base de datos externa (MongoDB)
+    #     # self._update_mongo_db(vals)
+    #     return result
+    
+
+    # def _update_mongo_db(self, vals):
+    #     mongo_db = 'mongo_keycloak'
+    #     mongo_collection = 'students'
+
+    #     # Conectar a MongoDB
+    #     try:
+    #         client = MongoClient('mongodb://root:root@192.168.100.6:27017/')
+    #         db = client[mongo_db]
+    #         collection = db[mongo_collection]
+    #     except Exception as e:
+    #         _logger.warning("Error al conectar a MongoDB: %s", e)
+    #         return
+
+    #     # Actualizar o insertar el registro en MongoDB
+    #     for record in self:
+    #         mongo_record = {
+    #             'first_name': record.first_name,
+    #             'middle_name': record.middle_name,
+    #             'last_name': record.last_name,
+    #             'email': vals.get('email', record.email),
+    #             'birth_date': record.birth_date,
+    #             'blood_group': record.blood_group,
+    #             'gender': record.gender,
+    #             'nationality': record.nationality.id,
+    #             'emergency_contact': record.emergency_contact.id,
+    #             'visa_info': record.visa_info,
+    #             'id_number': record.id_number,
+    #             'gr_no': record.gr_no,
+    #             'category_id': record.category_id.id,
+    #             'active': record.active,
+    #         }
+    #         # Aquí puedes decidir si deseas actualizar o insertar
+    #         collection.update_one({'gr_no': record.gr_no}, {'$set': mongo_record}, upsert=True)
+
+    #     print("Datos actualizados en MongoDB")
+
