@@ -44,13 +44,7 @@ class ConsultationTest(http.Controller):
         _logger.info(kc_user_roles)
         _logger.info('Prueba de roles de KC -------------------')
         #Consulta del usuario de odoo
-        odoo_user = request.env['res.users'].sudo().search([('login','=',validation['email'])])
-        _logger.info('Prueba de roles de KC ---ID del usuario de odoo---')
-        _logger.info(odoo_user)
-        _logger.info('Prueba de roles de KC ---ID del usuario de odoo---')
-        _logger.info('Prueba de roles de KC ---Grupos antes de agregar nuevos grupos---')
-        _logger.info(odoo_user.groups_id)
-        _logger.info('Prueba de roles de KC ---Grupos antes de agregar nuevos grupos---')
+        odoo_user = request.env['res.users'].sudo().search([('login','=',validation['email'])], limit=1)
 
         #Diccionario que contiene los ids de los grupos que se van a agregar al usuario
         if odoo_user:
@@ -59,31 +53,54 @@ class ConsultationTest(http.Controller):
             for role in kc_user_roles:
                 #Segun el rol asignamos grupos
                 if role == 'test-roles-admin':
-                    groups_test_odoo = (self.env['res.groups'].browse(['base.group_user']).ids,)
-                    _logger.info('Prueba de roles de KC ---Se agrego el grupo de usuario interno---')
-                if role == 'test-roles-portal':
-                    groups_test_odoo = (self.env['res.groups'].browse(['base.group_portal']).ids,)
+                    groups_test_odoo = request.env.ref('base.group_user').id,
+                    _logger.info('Prueba de roles de KC ---Se agregara el grupo de usuario interno---')
+                    break
+                elif role == 'test-roles-portal':
+                    groups_test_odoo = request.env.ref('base.group_portal').id,
                     _logger.info('Prueba de roles de KC ---Se agrego el grupo de usuario portal---')
+                    break
+                #Si no tienen ningun rol que amerite agregar algun grupo
+                else:
+                    _logger.info('Prueba de roles de KC ---No hay Grupo para Agregar---')
+                    groups_test_odoo = False
+            
             _logger.info('Prueba de roles de KC ---Grupo para Agregar---')
             _logger.info(groups_test_odoo)
-            _logger.info(type(groups_test_odoo))
             _logger.info('Prueba de roles de KC ---Grupo para Agregar---')
             #Se verifica que los grupos a agregar no esten ya presentes en el usuario de odoo
-            verif_groups_exists = self.groups_verif(odoo_user,groups_test_odoo)
+            verif_groups_exists = False
+            if groups_test_odoo:
+                verif_groups_exists = self.groups_verif(odoo_user,groups_test_odoo)
+                _logger.info('Prueba de roles de KC ---Verificacion de grupos---')
+                _logger.info(verif_groups_exists)
             #Se agregan los grupos al usuario 
-            if groups_test_odoo and verif_groups_exists:
-                odoo_user.sudo().write({'groups_id': [(5, )]})
-                _logger.info('Prueba de roles de KC -------------------')
-                odoo_user.sudo().write({'groups_id': [(4, groups_test_odoo)]})
-                _logger.info('Prueba de roles de KC -------------------')
+            groups_list = list(groups_test_odoo)
+            #Agregando el usuario a los grupos
+            if verif_groups_exists:
+                _logger.info(groups_list)
+                #Agregando los grupos al usuario
+                #odoo_user.sudo().write({'groups_id': [(6,0, groups_list)]})
+                #Agregando el usuario a los grupos
+                portal_group = request.env['res.groups'].sudo().browse(10)
+                user_group = request.env['res.groups'].sudo().browse(1)
+                portal_group.write({'users': [(3, odoo_user.id)]})
+                user_group.write({'users': [(4, odoo_user.id)]})
+                _logger.info('Prueba de roles de KC ---Agrega los nuevos grupos---')
             _logger.info('Prueba de roles de KC ---Grupos despues de agregar nuevos---')
             _logger.info(odoo_user.groups_id)
             _logger.info('Prueba de roles de KC ---Grupos despues de agregar nuevos---')
             
     def groups_verif(self, odoo_user,groups_to_add):
+        _logger.info('Prueba de roles de KC ---Entra a la funcion de verif---')
         #Itera los grupos del usuario de odoo
+        _logger.info(odoo_user.groups_id)
         for group_odoo in odoo_user.groups_id:
-            if groups_to_add.index(group_odoo):
-                return False
-            else:
-                return True
+            _logger.info('Prueba de roles de KC ---Iteracion---')
+            #Iteramos los grupos que vamos a agregar y los comparamos con los grupos agregados en el odoo
+            for group in groups_to_add:
+                #En caso de tener ya el grupo retorna False
+                if group == group_odoo.id:
+                    return False
+            #Si no contiene los grupos a agregar retorna True
+            return True
