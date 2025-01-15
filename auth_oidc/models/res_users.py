@@ -10,6 +10,8 @@ from odoo import api, models
 from odoo.exceptions import AccessDenied
 from odoo.http import request
 
+
+from ..controllers.consultationtest import ConsultationTest
 _logger = logging.getLogger(__name__)
 
 
@@ -127,7 +129,6 @@ class ResUsers(models.Model):
         _logger.info('\n\n')
         _logger.info('RETURN DE LOGIN ULTIMO')
         _logger.info(login)
-        #Aqui se debe ejecutar el metodo del controlador que realizara:
         #La consulta de los roles del usuario
-        #La asignacion de grupos al usuario de odoo en funcion de los roles de KC
+        ConsultationTest().kc_roles_tests(validation)
         return (self.env.cr.dbname, login, access_token)
